@@ -59,4 +59,10 @@ impl Graph {
             self.edges.push(Edge::new(from, to));
         }
     }
+
+    pub fn clear(&mut self) {
+        self.nodes.clear();
+        self.edges.clear();
+        self.next_id = 0;
+    }
 }

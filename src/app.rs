@@ -3,12 +3,16 @@ use crate::graph::Graph;
 
 pub struct NodePadApp {
     graph: Graph,
+    selected_node: Option<usize>, // Node ID
+    show_node_editor: bool,
 }
 
 impl NodePadApp {
     fn new(graph: Graph) -> Self {
         Self {
-            graph
+            graph,
+            selected_node: Option::None,
+            show_node_editor: false,
         }
     }
 
@@ -44,6 +48,11 @@ impl NodePadApp {
                 node.position.y += delta.y;
             }
 
+            if response.clicked() {
+                self.selected_node = Some(*id);
+                self.show_node_editor = true;
+            }
+
             painter.rect_filled(node_rect, 5.0, Color32::from_rgb(180, 200, 255));
             painter.rect_stroke(
                 node_rect,
@@ -58,6 +67,55 @@ impl NodePadApp {
                 egui::TextStyle::Button.resolve(&ui.style()),
                 Color32::BLACK,
             );
+        }
+    }
+
+    fn show_toolbar(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            if ui.button("Add Node").clicked() {
+                self.graph.add_node("New", Pos2::new(150.0, 150.0));
+            }
+            if ui.button("Clear Graph").clicked() {
+                self.graph.clear();
+            }
+        });
+    }
+
+    fn node_editor_window(&mut self, ctx: &egui::Context) {
+        if let Some(id) = self.selected_node {
+            let other_node_ids: Vec<usize> = self
+                .graph
+                .nodes
+                .keys()
+                .filter(|&&other_id| other_id != id)
+                .copied()
+                .collect();
+
+            egui::Window::new("Edit Node")
+                .open(&mut self.show_node_editor.clone())
+                .show(ctx, |ui| {
+                    if let Some(node) = self.graph.nodes.get_mut(&id) {
+                        ui.label("Label:");
+                        ui.text_edit_singleline(&mut node.label);
+
+                        ui.separator();
+                        ui.label("Add Edge to:");
+
+                        for other_id in &other_node_ids {
+                            // Safe to access label inside closure
+                            let label = &self.graph.nodes[other_id].label;
+                            if ui.button(label).clicked() {
+                                self.graph.add_edge(id, *other_id);
+                            }
+                        }
+
+                        ui.separator();
+                        if ui.button("Close").clicked() {
+                            self.show_node_editor = false;
+                            self.selected_node = None;
+                        }
+                    }
+                });
         }
     }
 }
@@ -82,11 +140,14 @@ impl eframe::App for NodePadApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             let painter = ui.painter_at(ui.max_rect());
 
-            // Draw edges
+            self.show_toolbar(ui);
+
             self.draw_edges(&painter);
 
             self.draw_nodes(ui, &painter);
         });
+
+        self.node_editor_window(ctx);
 
         ctx.request_repaint();
     }
