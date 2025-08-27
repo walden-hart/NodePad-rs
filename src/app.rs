@@ -73,7 +73,7 @@ impl NodePadApp {
     fn show_toolbar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             if ui.button("Add Node").clicked() {
-                self.graph.add_node("New", Pos2::new(150.0, 150.0));
+                self.graph.add_node("New", "", Pos2::new(150.0, 150.0));
             }
             if ui.button("Clear Graph").clicked() {
                 self.graph.clear();
@@ -92,27 +92,25 @@ impl NodePadApp {
                 .collect();
 
             egui::Window::new("Edit Node")
-                .open(&mut self.show_node_editor.clone())
+                .open(&mut self.show_node_editor)
                 .show(ctx, |ui| {
                     if let Some(node) = self.graph.nodes.get_mut(&id) {
                         ui.label("Label:");
                         ui.text_edit_singleline(&mut node.label);
 
                         ui.separator();
+
+                        ui.label("Note:");
+                        ui.text_edit_singleline(&mut node.note);
+
+                        ui.separator();
                         ui.label("Add Edge to:");
 
                         for other_id in &other_node_ids {
-                            // Safe to access label inside closure
                             let label = &self.graph.nodes[other_id].label;
                             if ui.button(label).clicked() {
                                 self.graph.add_edge(id, *other_id);
                             }
-                        }
-
-                        ui.separator();
-                        if ui.button("Close").clicked() {
-                            self.show_node_editor = false;
-                            self.selected_node = None;
                         }
                     }
                 });
@@ -124,9 +122,9 @@ impl NodePadApp {
 impl Default for NodePadApp {
     fn default() -> Self {
         let mut graph = Graph::new();
-        let n1 = graph.add_node("A", Pos2::new(100.0, 100.0));
-        let n2 = graph.add_node("B", Pos2::new(300.0, 150.0));
-        let n3 = graph.add_node("C", Pos2::new(200.0, 300.0));
+        let n1 = graph.add_node("A", "", Pos2::new(100.0, 100.0));
+        let n2 = graph.add_node("B", "", Pos2::new(300.0, 150.0));
+        let n3 = graph.add_node("C", "", Pos2::new(200.0, 300.0));
         graph.add_edge(n1, n2);
         graph.add_edge(n2, n3);
         graph.add_edge(n3, n1);

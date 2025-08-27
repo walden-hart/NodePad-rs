@@ -4,13 +4,15 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct Node {
     pub label: String,
+    pub note: String,
     pub position: Pos2
 }
 
 impl Node {
-    pub fn new(label: String, position: Pos2) -> Self {
+    pub fn new(label: String, note: String, position: Pos2) -> Self {
         Self {
             label,
+            note,
             position
         }
     }
@@ -47,10 +49,10 @@ impl Graph {
         }
     }
 
-    pub fn add_node(&mut self, label: &str, position: Pos2) -> usize {
+    pub fn add_node(&mut self, label: &str, note: &str, position: Pos2) -> usize {
         let id = self.next_id;
         self.next_id += 1;
-        self.nodes.insert(id, Node::new(label.to_string(), position));
+        self.nodes.insert(id, Node::new(label.to_string(), note.to_string(), position));
         id
     }
 
