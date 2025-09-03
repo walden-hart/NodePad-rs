@@ -3,8 +3,9 @@ use crate::graph::Graph;
 
 pub struct NodePadApp {
     graph: Graph,
-    selected_node: Option<usize>, // Node ID
+    selected_node: Option<usize>,
     show_node_editor: bool,
+    show_note_editor: bool,
 }
 
 impl NodePadApp {
@@ -13,6 +14,7 @@ impl NodePadApp {
             graph,
             selected_node: Option::None,
             show_node_editor: false,
+            show_note_editor: false,
         }
     }
 
@@ -99,9 +101,13 @@ impl NodePadApp {
                         ui.text_edit_singleline(&mut node.label);
 
                         ui.separator();
-
                         ui.label("Note:");
                         ui.text_edit_singleline(&mut node.note);
+
+                        ui.separator();
+                        if ui.button("Edit Note").clicked() {
+                            self.show_note_editor = true;
+                        }
 
                         ui.separator();
                         ui.label("Add Edge to:");
@@ -116,6 +122,45 @@ impl NodePadApp {
                 });
         }
     }
+
+    fn note_editor_window(&mut self, ctx: &egui::Context) {
+        if let Some(id) = self.selected_node {
+            let edge_labels: Vec<(usize, String)> = self.graph
+                .edges
+                .iter()
+                .filter(|e| e.from == id || e.to == id)
+                .filter_map(|edge| {
+                    self.graph.nodes.get(&edge.to).map(|n| (edge.to, n.label.clone()))
+                })
+                .collect();
+
+            if let Some(node) = self.graph.nodes.get_mut(&id) {
+                egui::Window::new("Edit Note")
+                    .resizable(true)
+                    .open(&mut self.show_note_editor)
+                    .show(ctx, |ui| {
+                        ui.label("Note:");
+                        let text_edit_height = (ui.available_height() * 0.6).max(100.0); // 60% of window height, at least 100 px
+                        egui::ScrollArea::vertical()
+                            .max_height(text_edit_height)
+                            .show(ui, |ui| {
+                                ui.add_sized([ui.available_width(), ui.available_height()], egui::TextEdit::multiline(&mut node.note));
+                            });
+
+
+                        ui.separator();
+                        ui.label("Links:");
+
+                        for (target_id, target_label) in edge_labels {
+                            if ui.link(target_label).clicked() {
+                                self.selected_node = Some(target_id);
+                            }
+                        }
+                    });
+            }
+        }
+    }
+
 }
 
 
@@ -146,6 +191,7 @@ impl eframe::App for NodePadApp {
         });
 
         self.node_editor_window(ctx);
+        self.note_editor_window(ctx);
 
         ctx.request_repaint();
     }
