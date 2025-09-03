@@ -125,14 +125,14 @@ impl NodePadApp {
 
     fn note_editor_window(&mut self, ctx: &egui::Context) {
         if let Some(id) = self.selected_node {
-            let edge_labels: Vec<(usize, String)> = self.graph
-                .edges
-                .iter()
-                .filter(|e| e.from == id || e.to == id)
-                .filter_map(|edge| {
-                    self.graph.nodes.get(&edge.to).map(|n| (edge.to, n.label.clone()))
-                })
-                .collect();
+            let edge_labels: Vec<(usize, String)> = self.graph.edges.iter().filter_map(|edge| {
+                if edge.from == id || edge.to == id {
+                    let other_id = if edge.from == id { edge.to } else { edge.from };
+                    self.graph.nodes.get(&other_id).map(|n| (other_id, n.label.clone()))
+                } else {
+                    None
+                }
+            }).collect();
 
             if let Some(node) = self.graph.nodes.get_mut(&id) {
                 egui::Window::new("Edit Note")
