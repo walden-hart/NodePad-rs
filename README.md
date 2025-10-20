@@ -16,12 +16,21 @@ cargo build --release
 The executable will be located at ./target/release/NodePad-rs
 
 ### Web
+
+#### Trunk
 * Download/clone the project from this repository
 * Run the following command using Trunk
 ```console
 trunk build
 ```
 The build products will be located in the ./dist/ directory
+
+#### Docker
+* Download/clone the project from this repository
+* Run the following command using Docker
+```console
+docker build -t $IMAGE_NAME .
+```
 ## Usage
 
 ### Local
@@ -33,6 +42,8 @@ Alternately, if the project has been built using the Installation instructions a
 as is appropriate for your OS, such as running ./NodePad-rs in Linux.
 
 ### Web
+
+#### Trunk
 This project can be run with Trunk by running the following command:
 ```console
 trunk serve
@@ -40,6 +51,13 @@ trunk serve
 This will create a test server accessible at http://localhost:8080/
 
 Alternately, if the project has been built using the Installation instructions above, the build products can be run through your preferred web server, such as Nginx.
+
+#### Docker
+This project can be run with Docker after following the Docker installation instructions above with the following command:
+```console
+docker run -p 8080:80 $IMAGE_NAME
+```
+This will create a test server accessible at http://localhost:8080/
 
 ## Support
 If there are any problems with this project, please email walden.hart.2003@gmail.com.
