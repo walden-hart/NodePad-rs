@@ -7,6 +7,8 @@ name = "NodePad-rs"
 version = "0.1.0"
 dependencies = [
  "eframe",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

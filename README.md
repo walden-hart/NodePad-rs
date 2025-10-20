@@ -6,19 +6,41 @@ others. One of its key features is the ability to set a customizable background,
 meaningful locations, such as placing notes about a specific place directly on a map image.
 
 ## Installation
+
+### Local
 * Download/clone the project from this repository
 * Run the following command using Cargo
 ```console
 cargo build --release
 ```
 The executable will be located at ./target/release/NodePad-rs
+
+### Web
+* Download/clone the project from this repository
+* Run the following command using Trunk
+```console
+trunk build
+```
+The build products will be located in the ./dist/ directory
 ## Usage
+
+### Local
 This project can be run with Cargo by running the following command:
 ```console
 cargo run
 ```
 Alternately, if the project has been built using the Installation instructions above, the executable created can be run
 as is appropriate for your OS, such as running ./NodePad-rs in Linux.
+
+### Web
+This project can be run with Trunk by running the following command:
+```console
+trunk serve
+```
+This will create a test server accessible at http://localhost:8080/
+
+Alternately, if the project has been built using the Installation instructions above, the build products can be run through your preferred web server, such as Nginx.
+
 ## Support
 If there are any problems with this project, please email walden.hart.2003@gmail.com.
 
