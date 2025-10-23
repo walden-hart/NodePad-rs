@@ -20,29 +20,16 @@ impl NodePadApp {
 
     fn draw_edges(&self, painter: &egui::Painter) {
         for edge in &self.graph.edges {
-            if let (Some(from), Some(to)) = (
-                self.graph.nodes.get(&edge.from),
-                self.graph.nodes.get(&edge.to),
-            ) {
-                painter.line_segment(
-                    [
-                        Pos2::new(from.position.x, from.position.y),
-                        Pos2::new(to.position.x, to.position.y),
-                    ],
-                    Stroke::new(2.0, Color32::BLACK),
-                );
+            if let (Some(from), Some(to)) = (self.graph.nodes.get(&edge.from), self.graph.nodes.get(&edge.to)) {
+                painter.line_segment([from.position, to.position], Stroke::new(2.0, Color32::BLACK));
             }
         }
     }
 
     fn draw_nodes(&mut self, ui: &mut egui::Ui, painter: &egui::Painter) {
         for (id, node) in &mut self.graph.nodes {
-            let node_rect = Rect::from_center_size(
-                Pos2::new(node.position.x, node.position.y),
-                egui::vec2(40.0, 40.0),
-            );
-            let response: Response =
-                ui.interact(node_rect, ui.id().with(*id), Sense::click_and_drag());
+            let node_rect = Rect::from_center_size(node.position, egui::vec2(40.0, 40.0));
+            let response: Response = ui.interact(node_rect, ui.id().with(*id), Sense::click_and_drag());
 
             if response.dragged() {
                 let delta = response.drag_delta();
@@ -56,19 +43,8 @@ impl NodePadApp {
             }
 
             painter.rect_filled(node_rect, 5.0, Color32::from_rgb(180, 200, 255));
-            painter.rect_stroke(
-                node_rect,
-                5.0, // corner radius
-                Stroke::new(2.0, Color32::BLACK),
-                egui::StrokeKind::Middle
-            );
-            painter.text(
-                Pos2::new(node.position.x, node.position.y),
-                egui::Align2::CENTER_CENTER,
-                &node.label,
-                egui::TextStyle::Button.resolve(&ui.style()),
-                Color32::BLACK,
-            );
+            painter.rect_stroke(node_rect, 5.0, Stroke::new(2.0, Color32::BLACK), egui::StrokeKind::Middle);
+            painter.text(node.position, egui::Align2::CENTER_CENTER, &node.label, egui::TextStyle::Button.resolve(&ui.style()), Color32::BLACK);
         }
     }
 
