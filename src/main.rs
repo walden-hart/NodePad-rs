@@ -1,7 +1,7 @@
 mod graph;
 mod app;
 
-use crate::app::NodePadApp;
+use app::NodePadApp;
 use log::info;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -20,7 +20,7 @@ fn main() -> eframe::Result<()> {
                 info!("Using WGPU backend: {}", info.backend);
                 info!("Device name: {}", info.name);
             }
-            Ok(Box::<NodePadApp>::default())
+            Ok(Box::new(NodePadApp::default()))
         }),
     )
 }

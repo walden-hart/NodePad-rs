@@ -1,11 +1,17 @@
 use eframe::egui::{self, Color32, Pos2, Rect, Response, Sense, Stroke};
 use crate::graph::Graph;
 
+enum Screen {
+    Start,
+    Main
+}
+
 pub struct NodePadApp {
     graph: Graph,
     selected_node: Option<usize>,
     show_node_editor: bool,
     show_note_editor: bool,
+    screen: Screen
 }
 
 impl NodePadApp {
@@ -15,6 +21,7 @@ impl NodePadApp {
             selected_node: Option::None,
             show_node_editor: false,
             show_note_editor: false,
+            screen: Screen::Start
         }
     }
 
@@ -137,6 +144,29 @@ impl NodePadApp {
         }
     }
 
+    fn start_screen(&mut self, ctx: &egui::Context) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            if ui.button("Start").clicked() {
+                self.screen = Screen::Main
+            }
+        });
+    }
+
+    fn main_screen(&mut self, ctx: &egui::Context) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            let painter = ui.painter_at(ui.max_rect());
+
+            self.show_toolbar(ui);
+
+            self.draw_edges(&painter);
+
+            self.draw_nodes(ui, &painter);
+            });
+
+            self.node_editor_window(ctx);
+            self.note_editor_window(ctx);
+    }
+
 }
 
 
@@ -156,18 +186,10 @@ impl Default for NodePadApp {
 
 impl eframe::App for NodePadApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let painter = ui.painter_at(ui.max_rect());
-
-            self.show_toolbar(ui);
-
-            self.draw_edges(&painter);
-
-            self.draw_nodes(ui, &painter);
-        });
-
-        self.node_editor_window(ctx);
-        self.note_editor_window(ctx);
+        match self.screen {
+            Screen::Main => self.main_screen(ctx),
+            Screen::Start => self.start_screen(ctx)
+        }
 
         ctx.request_repaint();
     }
