@@ -1,13 +1,12 @@
-use eframe::egui::{self, Color32, Pos2, Rect, Response, Sense, Stroke};
-use log::{info, warn};
 use crate::graph::Graph;
+use eframe::egui::{self, Color32, Pos2, Rect, Response, Sense, Stroke};
 use egui_async::{Bind, EguiAsyncPlugin};
+use log::{info, warn};
 use rfd::{AsyncFileDialog, FileHandle};
-
 
 enum Screen {
     Start,
-    Main
+    Main,
 }
 
 pub struct NodePadApp {
@@ -19,7 +18,6 @@ pub struct NodePadApp {
     file_dialog: Bind<FileHandle, String>,
     picked_file: Option<FileHandle>,
     show_file_dialog: bool,
-
 }
 
 impl NodePadApp {
@@ -38,8 +36,14 @@ impl NodePadApp {
 
     fn draw_edges(&self, painter: &egui::Painter) {
         for edge in &self.graph.edges {
-            if let (Some(from), Some(to)) = (self.graph.nodes.get(&edge.from), self.graph.nodes.get(&edge.to)) {
-                painter.line_segment([from.position, to.position], Stroke::new(2.0, Color32::BLACK));
+            if let (Some(from), Some(to)) = (
+                self.graph.nodes.get(&edge.from),
+                self.graph.nodes.get(&edge.to),
+            ) {
+                painter.line_segment(
+                    [from.position, to.position],
+                    Stroke::new(2.0, Color32::BLACK),
+                );
             }
         }
     }
@@ -47,7 +51,8 @@ impl NodePadApp {
     fn draw_nodes(&mut self, ui: &mut egui::Ui, painter: &egui::Painter) {
         for (id, node) in &mut self.graph.nodes {
             let node_rect = Rect::from_center_size(node.position, egui::vec2(40.0, 40.0));
-            let response: Response = ui.interact(node_rect, ui.id().with(*id), Sense::click_and_drag());
+            let response: Response =
+                ui.interact(node_rect, ui.id().with(*id), Sense::click_and_drag());
 
             if response.dragged() {
                 let delta = response.drag_delta();
@@ -61,8 +66,19 @@ impl NodePadApp {
             }
 
             painter.rect_filled(node_rect, 5.0, Color32::from_rgb(180, 200, 255));
-            painter.rect_stroke(node_rect, 5.0, Stroke::new(2.0, Color32::BLACK), egui::StrokeKind::Middle);
-            painter.text(node.position, egui::Align2::CENTER_CENTER, &node.label, egui::TextStyle::Button.resolve(ui.style()), Color32::BLACK);
+            painter.rect_stroke(
+                node_rect,
+                5.0,
+                Stroke::new(2.0, Color32::BLACK),
+                egui::StrokeKind::Middle,
+            );
+            painter.text(
+                node.position,
+                egui::Align2::CENTER_CENTER,
+                &node.label,
+                egui::TextStyle::Button.resolve(ui.style()),
+                Color32::BLACK,
+            );
         }
     }
 
@@ -119,14 +135,22 @@ impl NodePadApp {
 
     fn note_editor_window(&mut self, ctx: &egui::Context) {
         if let Some(id) = self.selected_node {
-            let edge_labels: Vec<(usize, String)> = self.graph.edges.iter().filter_map(|edge| {
-                if edge.from == id || edge.to == id {
-                    let other_id = if edge.from == id { edge.to } else { edge.from };
-                    self.graph.nodes.get(&other_id).map(|n| (other_id, n.label.clone()))
-                } else {
-                    None
-                }
-            }).collect();
+            let edge_labels: Vec<(usize, String)> = self
+                .graph
+                .edges
+                .iter()
+                .filter_map(|edge| {
+                    if edge.from == id || edge.to == id {
+                        let other_id = if edge.from == id { edge.to } else { edge.from };
+                        self.graph
+                            .nodes
+                            .get(&other_id)
+                            .map(|n| (other_id, n.label.clone()))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
 
             if let Some(node) = self.graph.nodes.get_mut(&id) {
                 egui::Window::new("Edit Note")
@@ -138,9 +162,11 @@ impl NodePadApp {
                         egui::ScrollArea::vertical()
                             .max_height(text_edit_height)
                             .show(ui, |ui| {
-                                ui.add_sized([ui.available_width(), ui.available_height()], egui::TextEdit::multiline(&mut node.note));
+                                ui.add_sized(
+                                    [ui.available_width(), ui.available_height()],
+                                    egui::TextEdit::multiline(&mut node.note),
+                                );
                             });
-
 
                         ui.separator();
                         ui.label("Links:");
@@ -157,12 +183,12 @@ impl NodePadApp {
 
     fn load_file(&mut self, filter_name: &'static str, filter_types: &'static [&'static str]) {
         if let Some(picked_file) = self.file_dialog.read_or_request(move || async move {
-                AsyncFileDialog::new()
-                    .add_filter(filter_name, filter_types)
-                    .set_directory("/")
-                    .pick_file()
-                    .await
-                    .ok_or("Problem Picking File".to_string())
+            AsyncFileDialog::new()
+                .add_filter(filter_name, filter_types)
+                .set_directory("/")
+                .pick_file()
+                .await
+                .ok_or("Problem Picking File".to_string())
         }) {
             match picked_file {
                 Ok(file) => {
@@ -203,14 +229,12 @@ impl NodePadApp {
             self.draw_edges(&painter);
 
             self.draw_nodes(ui, &painter);
-            });
+        });
 
-            self.node_editor_window(ctx);
-            self.note_editor_window(ctx);
+        self.node_editor_window(ctx);
+        self.note_editor_window(ctx);
     }
-
 }
-
 
 impl Default for NodePadApp {
     fn default() -> Self {
@@ -232,7 +256,7 @@ impl eframe::App for NodePadApp {
 
         match self.screen {
             Screen::Main => self.main_screen(ctx),
-            Screen::Start => self.start_screen(ctx)
+            Screen::Start => self.start_screen(ctx),
         }
 
         ctx.request_repaint();

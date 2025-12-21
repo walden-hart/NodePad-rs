@@ -5,7 +5,7 @@ use std::collections::HashMap;
 pub struct Node {
     pub label: String,
     pub note: String,
-    pub position: Pos2
+    pub position: Pos2,
 }
 
 impl Node {
@@ -13,7 +13,7 @@ impl Node {
         Self {
             label,
             note,
-            position
+            position,
         }
     }
 }
@@ -26,10 +26,7 @@ pub struct Edge {
 
 impl Edge {
     pub fn new(from: usize, to: usize) -> Self {
-        Self {
-            from,
-            to
-        }
+        Self { from, to }
     }
 }
 
@@ -52,7 +49,8 @@ impl Graph {
     pub fn add_node(&mut self, label: &str, note: &str, position: Pos2) -> usize {
         let id = self.next_id;
         self.next_id += 1;
-        self.nodes.insert(id, Node::new(label.to_string(), note.to_string(), position));
+        self.nodes
+            .insert(id, Node::new(label.to_string(), note.to_string(), position));
         id
     }
 

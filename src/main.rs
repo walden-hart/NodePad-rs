@@ -1,5 +1,5 @@
-mod graph;
 mod app;
+mod graph;
 
 use app::NodePadApp;
 use log::info;
@@ -8,7 +8,10 @@ use log::info;
 fn main() -> eframe::Result<()> {
     use log::LevelFilter;
 
-    simple_logger::SimpleLogger::new().with_level(LevelFilter::Debug).init().unwrap();
+    simple_logger::SimpleLogger::new()
+        .with_level(LevelFilter::Debug)
+        .init()
+        .unwrap();
 
     let options = eframe::NativeOptions::default();
     eframe::run_native(
