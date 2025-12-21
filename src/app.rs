@@ -1,5 +1,9 @@
 use eframe::egui::{self, Color32, Pos2, Rect, Response, Sense, Stroke};
+use log::{info, warn};
 use crate::graph::Graph;
+use egui_async::{Bind, EguiAsyncPlugin};
+use rfd::{AsyncFileDialog, FileHandle};
+
 
 enum Screen {
     Start,
@@ -11,7 +15,11 @@ pub struct NodePadApp {
     selected_node: Option<usize>,
     show_node_editor: bool,
     show_note_editor: bool,
-    screen: Screen
+    screen: Screen,
+    file_dialog: Bind<FileHandle, String>,
+    picked_file: Option<FileHandle>,
+    show_file_dialog: bool,
+
 }
 
 impl NodePadApp {
@@ -21,7 +29,10 @@ impl NodePadApp {
             selected_node: Option::None,
             show_node_editor: false,
             show_note_editor: false,
-            screen: Screen::Start
+            screen: Screen::Start,
+            file_dialog: Bind::default(),
+            picked_file: None,
+            show_file_dialog: false,
         }
     }
 
@@ -51,7 +62,7 @@ impl NodePadApp {
 
             painter.rect_filled(node_rect, 5.0, Color32::from_rgb(180, 200, 255));
             painter.rect_stroke(node_rect, 5.0, Stroke::new(2.0, Color32::BLACK), egui::StrokeKind::Middle);
-            painter.text(node.position, egui::Align2::CENTER_CENTER, &node.label, egui::TextStyle::Button.resolve(&ui.style()), Color32::BLACK);
+            painter.text(node.position, egui::Align2::CENTER_CENTER, &node.label, egui::TextStyle::Button.resolve(ui.style()), Color32::BLACK);
         }
     }
 
@@ -144,10 +155,41 @@ impl NodePadApp {
         }
     }
 
+    fn load_file(&mut self, filter_name: &'static str, filter_types: &'static [&'static str]) {
+        if let Some(picked_file) = self.file_dialog.read_or_request(move || async move {
+                AsyncFileDialog::new()
+                    .add_filter(filter_name, filter_types)
+                    .set_directory("/")
+                    .pick_file()
+                    .await
+                    .ok_or("Problem Picking File".to_string())
+        }) {
+            match picked_file {
+                Ok(file) => {
+                    info!("Loaded {}", file.file_name());
+                    self.picked_file = Some(file.clone());
+                    self.show_file_dialog = false;
+                    self.file_dialog.clear();
+                }
+                Err(e) => {
+                    warn!("{e}");
+                    self.show_file_dialog = false;
+                    self.file_dialog.clear();
+                }
+            }
+        }
+    }
+
     fn start_screen(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
             if ui.button("Start").clicked() {
                 self.screen = Screen::Main
+            }
+            if ui.button("Pick File").clicked() {
+                self.show_file_dialog = true;
+            }
+            if self.show_file_dialog {
+                self.load_file("Image", &["png", "jpg"]);
             }
         });
     }
@@ -186,6 +228,8 @@ impl Default for NodePadApp {
 
 impl eframe::App for NodePadApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        ctx.plugin_or_default::<EguiAsyncPlugin>();
+
         match self.screen {
             Screen::Main => self.main_screen(ctx),
             Screen::Start => self.start_screen(ctx)
