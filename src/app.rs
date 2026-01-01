@@ -2,7 +2,7 @@ use crate::graph::Graph;
 use eframe::egui::{self, Color32, Pos2, Rect, Response, Sense, Stroke};
 use egui_async::{Bind, EguiAsyncPlugin};
 use log::{info, warn};
-use rfd::{AsyncFileDialog, FileHandle};
+use rfd::AsyncFileDialog;
 
 enum Screen {
     Start,
@@ -15,8 +15,8 @@ pub struct NodePadApp {
     show_node_editor: bool,
     show_note_editor: bool,
     screen: Screen,
-    file_dialog: Bind<FileHandle, String>,
-    picked_file: Option<FileHandle>,
+    file_dialog: Bind<Vec<u8>, String>,
+    picked_file: Option<Vec<u8>>,
     show_file_dialog: bool,
 }
 
@@ -182,27 +182,30 @@ impl NodePadApp {
     }
 
     fn load_file(&mut self, filter_name: &'static str, filter_types: &'static [&'static str]) {
-        if let Some(picked_file) = self.file_dialog.read_or_request(move || async move {
-            AsyncFileDialog::new()
+        if let Some(picked_file) = self.file_dialog.read_or_request(|| async move {
+            let file = AsyncFileDialog::new()
                 .add_filter(filter_name, filter_types)
                 .set_directory("/")
                 .pick_file()
                 .await
-                .ok_or("Problem Picking File".to_string())
+                .ok_or("Problem Picking File".to_string())?;
+
+            let bytes = file.read().await;
+            Ok::<Vec<u8>, String>(bytes)
         }) {
             match picked_file {
                 Ok(file) => {
-                    info!("Loaded {}", file.file_name());
+                    info!("Loaded file");
                     self.picked_file = Some(file.clone());
                     self.show_file_dialog = false;
-                    self.file_dialog.clear();
                 }
                 Err(e) => {
                     warn!("{e}");
                     self.show_file_dialog = false;
-                    self.file_dialog.clear();
                 }
             }
+
+            self.file_dialog.clear();
         }
     }
 
