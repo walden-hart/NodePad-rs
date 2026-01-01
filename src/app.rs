@@ -1,6 +1,7 @@
 use crate::graph::Graph;
-use eframe::egui::{self, Color32, Pos2, Rect, Response, Sense, Stroke};
+use eframe::egui::{self, Color32, ColorImage, Pos2, Rect, Response, Sense, Stroke};
 use egui_async::{Bind, EguiAsyncPlugin};
+use image::load_from_memory;
 use log::{info, warn};
 use rfd::AsyncFileDialog;
 
@@ -18,6 +19,7 @@ pub struct NodePadApp {
     file_dialog: Bind<Vec<u8>, String>,
     picked_file: Option<Vec<u8>>,
     show_file_dialog: bool,
+    background_image: Option<egui::TextureHandle>,
 }
 
 impl NodePadApp {
@@ -31,6 +33,7 @@ impl NodePadApp {
             file_dialog: Bind::default(),
             picked_file: None,
             show_file_dialog: false,
+            background_image: None,
         }
     }
 
@@ -181,6 +184,36 @@ impl NodePadApp {
         }
     }
 
+    fn load_background(&mut self, ctx: &egui::Context) {
+        let file = match self.picked_file.take() {
+            Some(b) => b,
+            None => return,
+        };
+
+        if let Ok(img) = load_from_memory(&file) {
+            let size = [img.width() as usize, img.height() as usize];
+            let rgb = img.to_rgba8();
+            let pixels = rgb.as_flat_samples();
+
+            let color_image = ColorImage::from_rgba_unmultiplied(size, pixels.as_slice());
+
+            self.background_image =
+                Some(ctx.load_texture("background", color_image, Default::default()));
+        }
+    }
+
+    fn draw_background(&self, ui: &mut egui::Ui) {
+        if let Some(texture) = &self.background_image {
+            let rect = ui.max_rect();
+            ui.painter().image(
+                texture.id(),
+                rect,
+                egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                egui::Color32::WHITE,
+            );
+        }
+    }
+
     fn load_file(&mut self, filter_name: &'static str, filter_types: &'static [&'static str]) {
         if let Some(picked_file) = self.file_dialog.read_or_request(|| async move {
             let file = AsyncFileDialog::new()
@@ -220,12 +253,16 @@ impl NodePadApp {
             if self.show_file_dialog {
                 self.load_file("Image", &["png", "jpg"]);
             }
+
+            self.load_background(ctx);
         });
     }
 
     fn main_screen(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
             let painter = ui.painter_at(ui.max_rect());
+
+            self.draw_background(ui);
 
             self.show_toolbar(ui);
 
