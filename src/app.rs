@@ -298,7 +298,5 @@ impl eframe::App for NodePadApp {
             Screen::Main => self.main_screen(ctx),
             Screen::Start => self.start_screen(ctx),
         }
-
-        ctx.request_repaint();
     }
 }
