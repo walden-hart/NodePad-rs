@@ -23,6 +23,13 @@ pub struct NodePadApp {
 }
 
 impl NodePadApp {
+    fn world_to_screen(pos: Pos2, rect: Rect) -> Pos2 {
+        Pos2::new(
+            rect.left() + pos.x * rect.width(),
+            rect.top() + pos.y * rect.height(),
+        )
+    }
+
     fn new(graph: Graph) -> Self {
         Self {
             graph,
@@ -37,30 +44,36 @@ impl NodePadApp {
         }
     }
 
-    fn draw_edges(&self, painter: &egui::Painter) {
+    fn draw_edges(&self, ui: &mut egui::Ui) {
+        let rect = ui.max_rect();
+        let painter = ui.painter();
+
         for edge in &self.graph.edges {
             if let (Some(from), Some(to)) = (
                 self.graph.nodes.get(&edge.from),
                 self.graph.nodes.get(&edge.to),
             ) {
-                painter.line_segment(
-                    [from.position, to.position],
-                    Stroke::new(2.0, Color32::BLACK),
-                );
+                let from_pos = Self::world_to_screen(from.position, rect);
+                let to_pos = Self::world_to_screen(to.position, rect);
+                painter.line_segment([from_pos, to_pos], Stroke::new(2.0, Color32::BLACK));
             }
         }
     }
 
-    fn draw_nodes(&mut self, ui: &mut egui::Ui, painter: &egui::Painter) {
+    fn draw_nodes(&mut self, ui: &mut egui::Ui) {
+        let rect = ui.max_rect();
+        let painter = ui.painter();
         for (id, node) in &mut self.graph.nodes {
-            let node_rect = Rect::from_center_size(node.position, egui::vec2(40.0, 40.0));
+            let screen_pos = Self::world_to_screen(node.position, rect);
+
+            let node_rect = Rect::from_center_size(screen_pos, egui::vec2(40.0, 40.0));
             let response: Response =
                 ui.interact(node_rect, ui.id().with(*id), Sense::click_and_drag());
 
             if response.dragged() {
                 let delta = response.drag_delta();
-                node.position.x += delta.x;
-                node.position.y += delta.y;
+                node.position.x += delta.x / rect.width();
+                node.position.y += delta.y / rect.height();
             }
 
             if response.clicked() {
@@ -76,7 +89,7 @@ impl NodePadApp {
                 egui::StrokeKind::Middle,
             );
             painter.text(
-                node.position,
+                Self::world_to_screen(node.position, rect),
                 egui::Align2::CENTER_CENTER,
                 &node.label,
                 egui::TextStyle::Button.resolve(ui.style()),
@@ -88,7 +101,7 @@ impl NodePadApp {
     fn show_toolbar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             if ui.button("Add Node").clicked() {
-                self.graph.add_node("New", "", Pos2::new(150.0, 150.0));
+                self.graph.add_node("New", "", Pos2::new(0.25, 0.25));
             }
             if ui.button("Clear Graph").clicked() {
                 self.graph.clear();
@@ -205,7 +218,8 @@ impl NodePadApp {
     fn draw_background(&self, ui: &mut egui::Ui) {
         if let Some(texture) = &self.background_image {
             let rect = ui.max_rect();
-            ui.painter().image(
+            let painter = ui.painter();
+            painter.image(
                 texture.id(),
                 rect,
                 egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
@@ -260,15 +274,13 @@ impl NodePadApp {
 
     fn main_screen(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let painter = ui.painter_at(ui.max_rect());
-
             self.draw_background(ui);
 
             self.show_toolbar(ui);
 
-            self.draw_edges(&painter);
+            self.draw_edges(ui);
 
-            self.draw_nodes(ui, &painter);
+            self.draw_nodes(ui);
         });
 
         self.node_editor_window(ctx);
@@ -279,9 +291,9 @@ impl NodePadApp {
 impl Default for NodePadApp {
     fn default() -> Self {
         let mut graph = Graph::new();
-        let n1 = graph.add_node("A", "", Pos2::new(100.0, 100.0));
-        let n2 = graph.add_node("B", "", Pos2::new(300.0, 150.0));
-        let n3 = graph.add_node("C", "", Pos2::new(200.0, 300.0));
+        let n1 = graph.add_node("A", "", Pos2::new(0.1, 0.1));
+        let n2 = graph.add_node("B", "", Pos2::new(0.3, 0.15));
+        let n3 = graph.add_node("C", "", Pos2::new(0.2, 0.3));
         graph.add_edge(n1, n2);
         graph.add_edge(n2, n3);
         graph.add_edge(n3, n1);
